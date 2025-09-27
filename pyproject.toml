@@ -1,7 +1,7 @@
 [project]
 name = "expense-tracking-mcp-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local MCP server which you can integrate with your MCP Client and track your expense"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
