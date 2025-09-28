@@ -10,4 +10,7 @@ wheels/
 .venv
 
 # DB
-expense.db
+*.db
+
+# Logging
+*.log

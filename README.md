@@ -8,3 +8,7 @@ uv run fastmcp run main.py
 ## How to add MCP server under claude-desktop
 1) Open Powershell and go to your project directory
 2) uv run fastmcp install claude-desktop main.py
+
+
+## Test the server in dev mode
+uv run fastmcp dev main.py
