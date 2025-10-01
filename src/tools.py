@@ -11,6 +11,10 @@ DB_PATH = Path(__file__).parent.parent / "expense.db"
 # Init DB if not exists 
 init_db(DB_PATH)
 
+# Log SQL query
+def log_sql(statement):
+    logger.debug(f"SQL executed: {statement}")
+
 def register_tools(mcp):
     """Register all expense tracking tools with the MCP server"""
     
@@ -20,7 +24,7 @@ def register_tools(mcp):
     logger.debug(f"Database exists: {DB_PATH.exists()}")
     
     @mcp.tool()
-    def add_expense(date, amount, category, subcategory="", note=""):
+    def add_expense(date: str, amount: float, category: str, subcategory="", note=""):
         '''Add a new expense entry to the database.'''
         logger.debug(f"add_expense called: {amount} for {category} on {date}")
         logger.debug(f"Connecting to database at: {DB_PATH}")
@@ -29,7 +33,7 @@ def register_tools(mcp):
             with sqlite3.connect(DB_PATH) as c:
                 cur = c.execute(
                     "INSERT INTO expenses(date, amount, category, subcategory, note) VALUES (?,?,?,?,?)",
-                    (date, amount, category, subcategory, note)
+                    (date.lower(), amount, category.lower(), subcategory.lower(), note.lower())
                 )
                 expense_id = cur.lastrowid
                 logger.info(f"Successfully added expense with ID: {expense_id}")
@@ -74,22 +78,40 @@ def register_tools(mcp):
     logger.info("=== All tools registered successfully ===")
 
     @mcp.tool()
-    def get_expenses_by_category(category):
+    def get_expenses_by_category(category: str):
         '''Retrieve expenses filtered by category.'''
+        logger.debug("=== get_expenses_by_category called ===")
+        logger.debug(f"Connecting to database at: {DB_PATH}")
+        logger.debug(f"Database file exists: {DB_PATH.exists()}")
         with sqlite3.connect(DB_PATH) as c:
             c.row_factory = sqlite3.Row
-            cur = c.execute("SELECT * FROM expenses WHERE category = ? ORDER BY date DESC", (category,))
+            cur = c.execute("SELECT * FROM expenses WHERE category = ? ORDER BY date DESC", (category.lower()))
             expenses = [dict(row) for row in cur.fetchall()]
             return {"status": "ok", "expenses": expenses}
 
     @mcp.tool()
-    def get_expenses_by_date_range(start_date, end_date):
+    def get_expenses_by_date_range(start_date: str, end_date: str):
         '''Retrieve expenses within a date range.'''
+        logger.debug("=== get_expenses_by_date_range called ===")
+        logger.debug(f"Connecting to database at: {DB_PATH}")
+        logger.debug(f"Database file exists: {DB_PATH.exists()}")
         with sqlite3.connect(DB_PATH) as c:
             c.row_factory = sqlite3.Row
             cur = c.execute(
                 "SELECT * FROM expenses WHERE date BETWEEN ? AND ? ORDER BY date DESC", 
-                (start_date, end_date)
+                (start_date.lower(), end_date.lower())
             )
             expenses = [dict(row) for row in cur.fetchall()]
             return {"status": "ok", "expenses": expenses}
+        
+    @mcp.tool()
+    def delete_expense_by_date_and_title(date:str, title:str):
+        ''' Delete expense by date and title '''
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.set_trace_callback(log_sql)
+            cur = conn.cursor()
+            cur.execute("Delete FROM expenses WHERE date = ? AND note = ?", (date.lower() , title.lower()))
+            deleted_rows = cur.rowcount
+            conn.commit()
+            logger.debug(f"{deleted_rows} rows have been deleted")
+            return {"status":"ok", "deleted_rows": deleted_rows}
