@@ -72,3 +72,24 @@ def register_tools(mcp):
             return {"status": "error", "message": str(e)}
     
     logger.info("=== All tools registered successfully ===")
+
+    @mcp.tool()
+    def get_expenses_by_category(category):
+        '''Retrieve expenses filtered by category.'''
+        with sqlite3.connect(DB_PATH) as c:
+            c.row_factory = sqlite3.Row
+            cur = c.execute("SELECT * FROM expenses WHERE category = ? ORDER BY date DESC", (category,))
+            expenses = [dict(row) for row in cur.fetchall()]
+            return {"status": "ok", "expenses": expenses}
+
+    @mcp.tool()
+    def get_expenses_by_date_range(start_date, end_date):
+        '''Retrieve expenses within a date range.'''
+        with sqlite3.connect(DB_PATH) as c:
+            c.row_factory = sqlite3.Row
+            cur = c.execute(
+                "SELECT * FROM expenses WHERE date BETWEEN ? AND ? ORDER BY date DESC", 
+                (start_date, end_date)
+            )
+            expenses = [dict(row) for row in cur.fetchall()]
+            return {"status": "ok", "expenses": expenses}
